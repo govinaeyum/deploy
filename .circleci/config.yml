@@ -1,1 +1,127 @@
 version: 2.1
+#orbs:
+  #docker: circleci/docker@2.0.1
+parameters:
+  enterprise_version:
+    type: string
+    default: ""
+  pdf_version:
+    type: string
+    default: ""
+  S3bucket_name:
+    type: string
+    default: ""
+  s3_key:
+    type: string
+    default: ""
+  app_version_name:
+    type: string
+    default: ""
+  version_label:
+    type: string
+    default: ""
+  ebstalk_env_name:
+    type: string
+    default: ""
+  
+jobs:
+  deploy-app:
+    docker:
+      - image: cimg/node:14.18.2
+    #working_directory: ~/deployments
+    environment:
+      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprsie_version >>"
+      PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
+      S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
+      S3_KEY: "<< pipeline.parameters.S3_key >>"
+      APP_VERSION_NAME: "<< pipeline.parameters.app_version_name >>"
+      VERSION_LABEL: "<< pipeline.parameters.version_label >>"
+      EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>"
+    steps:
+      #- docker/install-docker:
+          #install-dir: /usr/local/bin 
+          #version: '20.10.9' 
+      #- setup_remote_docker:
+          #version: 19.03.13
+          #docker_layer_caching: true
+      - run: echo "API Server version is ${ENTERPRISE_VERSION}"
+      - run: echo "PDF server version is ${PDF_VERSION}"
+      - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
+      - run: echo "Application version name is ${APP_VERSION_NAME}"
+      - run: echo "Version label is ${VERSION_LABEL}"
+      - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
+      - checkout
+      - run:
+          name: show current branch
+          command: echo ${CIRCLE_BRANCH}
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run:
+          name: Install npm modules
+          command: npm install
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Installing AWS CLI
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt install -y awscli
+            sudo apt-get install -y python-pip python-dev build-essential
+      - setup_remote_docker:
+          version: 20.10.11
+          docker_layer_caching: true
+      - run: |
+          ssh remote-docker \<<EOF
+            sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
+            sudo service docker restart
+          EOF
+      - run: |
+          cd ../
+          node index package compose/aws/multicontainer.zip --license=MYLICENSE --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+
+  deploy-to-s3-bucket:
+    docker:
+      - image: cimg/node:14.18.2
+    #working_directory: ~/deployments
+    steps:
+      - checkout
+      - run: 
+          name: show current branch
+          command: echo ${CIRCLE_BRANCH}
+      - run:
+          name: Installing AWS CLI
+          command: |
+            sudo apt-get -y -qq update
+            sudo apt install -y awscli
+            sudo apt-get install -y python-pip python-dev build-essential
+      - run:
+          name: Deploy app to s3 bucket
+          command: |
+            cd ../
+            if [ "${CIRCLE_BRANCH}" == "main" ]
+            then
+            aws --region ${AWS_REGION} s3 sync ~/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
+            elif
+            if [ "${CIRCLE_BRANCH}" == "test_deploy_formio" ]
+            then
+            aws --region ${AWS_REGION} s3 sync ~/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
+            else
+            exit 1
+            fi
+    
+workflows:
+   deploy_formio_app:
+    jobs:
+      - deploy-app
+      - deploy-to-s3-bucket
+          requires:
+            - deploy-app
+          filters:
+            branches:
+              only:
+                - main
+                - test_deploy_formio
+
+
