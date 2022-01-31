@@ -47,6 +47,7 @@ jobs:
       - run: echo "API Server version is ${ENTERPRISE_VERSION}"
       - run: echo "PDF server version is ${PDF_VERSION}"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
+      - run: echo "S3 bucket key is ${S3_KEY}"
       - run: echo "Application version name is ${APP_VERSION_NAME}"
       - run: echo "Version label is ${VERSION_LABEL}"
       - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
