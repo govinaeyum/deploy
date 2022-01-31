@@ -30,7 +30,7 @@ jobs:
       - image: cimg/node:14.18.2
     #working_directory: ~/deployments
     environment:
-      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprsie_version >>"
+      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
       S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
       S3_KEY: "<< pipeline.parameters.s3_key >>"
