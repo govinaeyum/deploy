@@ -79,7 +79,7 @@ jobs:
           EOF
       - run: |
           cd ../
-          node index package compose/aws/multicontainer.zip --license=MYLICENSE --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+          node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
 
   deploy-to-s3-bucket:
     docker:
@@ -115,7 +115,7 @@ workflows:
    deploy_formio_app:
     jobs:
       - deploy-app
-      - deploy-to-s3-bucket
+      - deploy-to-s3-bucket:
           requires:
             - deploy-app
           filters:
