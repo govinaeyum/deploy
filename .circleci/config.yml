@@ -108,8 +108,8 @@ jobs:
       - run:
           name: Deploy app to s3 bucket
           command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://${S3BUCKET_NAME} 
-    deploy-app-version-to-EB:
-      docker:
+  deploy-app-version-to-EB:
+    docker:
       - image: cimg/node:14.18.2
     working_directory: ~/deploy_formio
     environment:
