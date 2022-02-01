@@ -72,23 +72,30 @@ jobs:
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
             sudo service docker restart
           EOF
-       - run:
+      - run:
           name: Build deploy package
           command: |
               node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
-          root: .
+          root: ./
           paths:
-            - .
+            - deployments
           
   deploy-to-s3-bucket:
     docker:
       - image: cimg/node:14.18.2
     working_directory: ~/deploy_formio
+    environment:
+      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
+      PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
+      S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
     steps:
+      - run: echo "API Server version is ${ENTERPRISE_VERSION}"
+      - run: echo "PDF server version is ${PDF_VERSION}"
+      - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
       - checkout
       - attach_workspace:
-          at: .
+          at: deployments 
       - run: 
           name: show current branch
           command: echo ${CIRCLE_BRANCH}
@@ -100,18 +107,7 @@ jobs:
       # sudo apt-get install -y python-pip python-dev build-essential
       - run:
           name: Deploy app to s3 bucket
-          command: |
-            if [ "${CIRCLE_BRANCH}" == "main" ]
-            then
-            aws --region ${AWS_REGION} s3 sync ~/deploy_formio/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
-            elif
-            if [ "${CIRCLE_BRANCH}" == "test_deploy_formio" ]
-            then
-            aws --region ${AWS_REGION} s3 sync ~/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
-            else
-            exit 1
-            fi
-    
+          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://${S3BUCKET_NAME} 
 workflows:
    deploy_formio_app:
     jobs:
