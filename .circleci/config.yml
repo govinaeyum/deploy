@@ -135,7 +135,7 @@ jobs:
             sudo apt install -y awscli
       - run:
           name: Upload application version to elastic beanstalk
-          command: aws --region ${AWS_REGION} elasticbeanstalk create-application-version --application-name ${APP_VERSION_NAME} --version-label ${APP_VERSION_NAME} --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
+          command: aws --region ${AWS_REGION} elasticbeanstalk create-application-version --application-name ${APP_VERSION_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
   deploy-app-version-to-EB Environment:
     docker:
       - image: cimg/node:14.18.2
