@@ -72,7 +72,7 @@ jobs:
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
             sudo service docker restart
           EOF
-       - run:
+      - run:
           name: Build deploy package
           command: |
               node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
