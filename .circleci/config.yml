@@ -186,6 +186,7 @@ workflows:
                 - main
                 - test_deploy_formio
       - hold:
+          type: approval
           requires:
             - deploy-app-version-to-EB
       - deploy-app-version-to-EB Environment:
