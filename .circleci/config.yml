@@ -185,9 +185,12 @@ workflows:
               only:
                 - main
                 - test_deploy_formio
-      - deploy-app-version-to-EB Environment:
+      - hold:
           requires:
             - deploy-app-version-to-EB
+      - deploy-app-version-to-EB Environment:
+          requires:
+            - hold
           filters:
             branches:
               only:
