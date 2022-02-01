@@ -85,7 +85,14 @@ jobs:
     docker:
       - image: cimg/node:14.18.2
     working_directory: ~/deploy_formio
+    environment:
+      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
+      PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
+      S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
     steps:
+      - run: echo "API Server version is ${ENTERPRISE_VERSION}"
+      - run: echo "PDF server version is ${PDF_VERSION}"
+      - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
       - checkout
       - attach_workspace:
           at: deployments 
@@ -100,7 +107,7 @@ jobs:
       # sudo apt-get install -y python-pip python-dev build-essential
       - run:
           name: Deploy app to s3 bucket
-          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://formio-files-dev  
+          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://${S3BUCKET_NAME} 
 workflows:
    deploy_formio_app:
     jobs:
