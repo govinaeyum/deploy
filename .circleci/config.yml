@@ -38,7 +38,6 @@ jobs:
       VERSION_LABEL: "<< pipeline.parameters.version_label >>"
       EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>"
     steps:
-
       - run: echo "API Server version is ${ENTERPRISE_VERSION}"
       - run: echo "PDF server version is ${PDF_VERSION}"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
@@ -74,15 +73,12 @@ jobs:
           EOF
       - run:
           name: Build deploy package
-          command: |
-              sudo chown -R $USER /usr/local/lib/node_modules
-              npm install -g @formio/deploy
-              formio-deploy package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+          command: node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
           paths:
             - ./
-          
+
   deploy-to-s3-bucket:
     docker:
       - image: cimg/node:14.18.2
