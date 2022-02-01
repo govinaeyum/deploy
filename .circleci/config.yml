@@ -75,6 +75,7 @@ jobs:
       - run:
           name: Build deploy package
           command: |
+              npm install -g @formio/deploy
               formio-deploy package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
