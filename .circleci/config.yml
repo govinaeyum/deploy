@@ -28,9 +28,9 @@ jobs:
   deploy-app:
     docker:
       - image: cimg/node:14.18.2
-    #working_directory: ~/deployments
+    working_directory: ~/deploy_formio
     environment:
-      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprsie_version >>"
+      ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
       S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
       S3_KEY: "<< pipeline.parameters.s3_key >>"
@@ -38,12 +38,7 @@ jobs:
       VERSION_LABEL: "<< pipeline.parameters.version_label >>"
       EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>"
     steps:
-      #- docker/install-docker:
-          #install-dir: /usr/local/bin 
-          #version: '20.10.9' 
-      #- setup_remote_docker:
-          #version: 19.03.13
-          #docker_layer_caching: true
+
       - run: echo "API Server version is ${ENTERPRISE_VERSION}"
       - run: echo "PDF server version is ${PDF_VERSION}"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
@@ -67,9 +62,9 @@ jobs:
       - run:
           name: Installing AWS CLI
           command: |
-            sudo apt-get -y -qq update
+            sudo apt-get update
             sudo apt install -y awscli
-            sudo apt-get install -y python-pip python-dev build-essential
+
       - setup_remote_docker:
           version: 20.10.11
           docker_layer_caching: true
@@ -78,32 +73,38 @@ jobs:
             sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
             sudo service docker restart
           EOF
-      - run: |
-          cd ../
-          node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
-
+       - run:
+          name: Build deploy package
+          command: |
+              node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+          
   deploy-to-s3-bucket:
     docker:
       - image: cimg/node:14.18.2
-    #working_directory: ~/deployments
+    working_directory: ~/deploy_formio
     steps:
       - checkout
+      - attach_workspace:
+          at: .
       - run: 
           name: show current branch
           command: echo ${CIRCLE_BRANCH}
       - run:
           name: Installing AWS CLI
           command: |
-            sudo apt-get -y -qq update
+            sudo apt-get update
             sudo apt install -y awscli
-            sudo apt-get install -y python-pip python-dev build-essential
+      # sudo apt-get install -y python-pip python-dev build-essential
       - run:
           name: Deploy app to s3 bucket
           command: |
-            cd ../
             if [ "${CIRCLE_BRANCH}" == "main" ]
             then
-            aws --region ${AWS_REGION} s3 sync ~/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
+            aws --region ${AWS_REGION} s3 sync ~/deploy_formio/deployments/compose/multicontainer.zip/ s3://${S3BUCKET_NAME}
             elif
             if [ "${CIRCLE_BRANCH}" == "test_deploy_formio" ]
             then
