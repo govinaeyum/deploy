@@ -108,6 +108,35 @@ jobs:
       - run:
           name: Deploy app to s3 bucket
           command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://${S3BUCKET_NAME} 
+    deploy-app-version-to-EB:
+      docker:
+      - image: cimg/node:14.18.2
+    working_directory: ~/deploy_formio
+    environment:
+      S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
+      S3_KEY: "<< pipeline.parameters.s3_key >>"
+      APP_VERSION_NAME: "<< pipeline.parameters.app_version_name >>"
+      VERSION_LABEL: "<< pipeline.parameters.version_label >>"
+      EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>" 
+    steps:
+      - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
+      - run: echo "S3 bucket key is ${S3_KEY}"
+      - run: echo "Application version name is ${APP_VERSION_NAME}"
+      - run: echo "Version label is ${VERSION_LABEL}"
+      - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
+      - checkout
+      - run: 
+          name: show current branch
+          command: echo ${CIRCLE_BRANCH}
+      - run:
+          name: Installing AWS CLI
+          command: |
+            sudo apt-get update
+            sudo apt install -y awscli
+      - run:
+          name: Upload application version to elastic beanstalk
+          command: aws elasticbeanstalk create-application-version --application-name ${APP_VERSION_NAME} --version-label ${APP_VERSION_NAME} --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
+
 workflows:
    deploy_formio_app:
     jobs:
@@ -115,6 +144,14 @@ workflows:
       - deploy-to-s3-bucket:
           requires:
             - deploy-app
+          filters:
+            branches:
+              only:
+                - main
+                - test_deploy_formio
+      - deploy-app-version-to-EB:
+          requires:
+            - deploy-to-s3-bucket
           filters:
             branches:
               only:
