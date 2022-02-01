@@ -75,7 +75,7 @@ jobs:
       - run:
           name: Build deploy package
           command: |
-              node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+              formio-deploy package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
           paths:
