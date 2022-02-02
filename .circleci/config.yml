@@ -1,6 +1,42 @@
 version: 2.1
-#orbs:
-  #docker: circleci/docker@2.0.1
+executor:
+   app-executor:
+    docker:
+      - image: cimg/node:14.18.2
+    working_directory: ~/deploy_formio
+aliases:
+  - &show-current-branch-name
+    run:
+      name: show current branch
+      command: echo ${CIRCLE_BRANCH}
+  - &restore-cache
+      key: dependency-cache-{{ checksum "package.json" }}
+  - &install-dependencies
+    run:
+      name: Install npm modules
+      command: npm install
+  - &save-cache
+    save_cache:
+      key: dependency-cache-{{ checksum "package.json" }}
+      paths:
+        - node_modules
+  - &install-aws-cli
+    run:
+      name: Installing AWS CLI
+      command: |
+        sudo apt-get update
+        sudo apt install -y awscli
+  - &setup-remote-docker
+    setup_remote_docker:
+      version: 20.10.11
+      docker_layer_caching: true
+  - &ssh-remote-docker
+    run: |
+      ssh remote-docker \<<EOF
+        sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
+        sudo service docker restart
+      EOF
+
 parameters:
   enterprise_version:
     type: string
@@ -25,10 +61,8 @@ parameters:
     default: ""
   
 jobs:
-  build_deploy-app:
-    docker:
-      - image: cimg/node:14.18.2
-    working_directory: ~/deploy_formio
+  build-deploy-app:
+    executor: app-executor
     environment:
       ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
@@ -46,31 +80,13 @@ jobs:
       - run: echo "Version label is ${VERSION_LABEL}"
       - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
       - checkout
-      - run:
-          name: show current branch
-          command: echo ${CIRCLE_BRANCH}
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-      - run:
-          name: Install npm modules
-          command: npm install
-      - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-          paths:
-            - node_modules
-      - run:
-          name: Installing AWS CLI
-          command: |
-            sudo apt-get update
-            sudo apt install -y awscli
-      - setup_remote_docker:
-          version: 20.10.11
-          docker_layer_caching: true
-      - run: |
-          ssh remote-docker \<<EOF
-            sudo bash -c 'echo "{\"experimental\": true}" > /etc/docker/daemon.json'
-            sudo service docker restart
-          EOF
+      - *show-current-branch-name
+      - *restore-cache
+      - *install-dependencies   
+      - *save-cache
+      - *install-aws-cli
+      - *setup-remote-docker
+      - *ssh-remote-docker
       - run:
           name: Build deploy package
           command: node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
@@ -80,9 +96,7 @@ jobs:
             - ./
 
   deploy-to-s3-bucket:
-    docker:
-      - image: cimg/node:14.18.2
-    working_directory: ~/deploy_formio
+    executor: app-executor
     environment:
       ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
@@ -94,71 +108,49 @@ jobs:
       - checkout
       - attach_workspace:
           at: ./ 
-      - run: 
-          name: show current branch
-          command: echo ${CIRCLE_BRANCH}
-      - run:
-          name: Installing AWS CLI
-          command: |
-            sudo apt-get update
-            sudo apt install -y awscli
-      # sudo apt-get install -y python-pip python-dev build-essential
+      - *show-current-branch-name
+      - *restore-cache
+      - *install-dependencies   
+      - *save-cache
+      - *install-aws-cli
       - run:
           name: Deploy app to s3 bucket
           command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/aws/multicontainer.zip s3://${S3BUCKET_NAME} 
   deploy-app-version-to-EB:
-    docker:
-      - image: cimg/node:14.18.2
-    working_directory: ~/deploy_formio
+    executor: app-executor
     environment:
       S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
       S3_KEY: "<< pipeline.parameters.s3_key >>"
       APP_VERSION_NAME: "<< pipeline.parameters.app_version_name >>"
       VERSION_LABEL: "<< pipeline.parameters.version_label >>"
-      EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>" 
     steps:
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
       - run: echo "S3 bucket key is ${S3_KEY}"
       - run: echo "Application version name is ${APP_VERSION_NAME}"
       - run: echo "Version label is ${VERSION_LABEL}"
-      - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
       - checkout
-      - run: 
-          name: show current branch
-          command: echo ${CIRCLE_BRANCH}
-      - run:
-          name: Installing AWS CLI
-          command: |
-            sudo apt-get update
-            sudo apt install -y awscli
+      - *show-current-branch-name
+      - *restore-cache
+      - *install-dependencies   
+      - *save-cache
+      - *install-aws-cli
       - run:
           name: Upload application version to elastic beanstalk
           command: aws --region ${AWS_REGION} elasticbeanstalk create-application-version --application-name ${APP_VERSION_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
   deploy-app-version-to-EB Environment:
-    docker:
-      - image: cimg/node:14.18.2
-    working_directory: ~/deploy_formio
+    executor: app-executor
     environment:
-      S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
-      S3_KEY: "<< pipeline.parameters.s3_key >>"
-      APP_VERSION_NAME: "<< pipeline.parameters.app_version_name >>"
       VERSION_LABEL: "<< pipeline.parameters.version_label >>"
       EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>" 
     steps:
-      - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
-      - run: echo "S3 bucket key is ${S3_KEY}"
-      - run: echo "Application version name is ${APP_VERSION_NAME}"
       - run: echo "Version label is ${VERSION_LABEL}"
       - run: echo "Elastic Beanstalk environment name is ${EBSTALK_ENV_NAME}"
       - checkout
-      - run: 
-          name: show current branch
-          command: echo ${CIRCLE_BRANCH}
-      - run:
-          name: Installing AWS CLI
-          command: |
-            sudo apt-get update
-            sudo apt install -y awscli
+      - *show-current-branch-name
+      - *restore-cache
+      - *install-dependencies   
+      - *save-cache
+      - *install-aws-cli
       - run: 
           name: Upload application version to EB Environment
           command: aws --region ${AWS_REGION} elasticbeanstalk update-environment --environment-name ${EBSTALK_ENV_NAME} --version-label ${VERSION_LABEL}
@@ -166,10 +158,10 @@ jobs:
 workflows:
    deploy_formio_app:
     jobs:
-      - build_deploy-app
+      - build-deploy-app
       - deploy-to-s3-bucket:
           requires:
-            - build_deploy-app
+            - build-deploy-app
           filters:
             branches:
               only:
