@@ -1,5 +1,5 @@
 version: 2.1
-executor:
+executors:
    app-executor:
     docker:
       - image: cimg/node:14.18.2
@@ -10,6 +10,7 @@ aliases:
       name: show current branch
       command: echo ${CIRCLE_BRANCH}
   - &restore-cache
+    restore_cache:
       key: dependency-cache-{{ checksum "package.json" }}
   - &install-dependencies
     run:
@@ -156,7 +157,7 @@ jobs:
           command: aws --region ${AWS_REGION} elasticbeanstalk update-environment --environment-name ${EBSTALK_ENV_NAME} --version-label ${VERSION_LABEL}
 
 workflows:
-   deploy_formio_app:
+   deploy-formio-app:
     jobs:
       - build-deploy-app
       - deploy-to-s3-bucket:
