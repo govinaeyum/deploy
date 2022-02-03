@@ -90,7 +90,7 @@ jobs:
       - *ssh-remote-docker
       - run:
           name: Build deploy package
-          command: node index package compose/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+          command: node index package compose/aws/multicontainer.zip --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
           paths:
@@ -116,7 +116,7 @@ jobs:
       - *install-aws-cli
       - run:
           name: Deploy app to s3 bucket
-          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/multicontainer.zip s3://${S3BUCKET_NAME} 
+          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/aws/multicontainer.zip s3://${S3BUCKET_NAME} 
   deploy-app-version-to-EB:
     executor: app-executor
     environment:
