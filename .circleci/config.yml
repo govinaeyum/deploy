@@ -105,6 +105,7 @@ jobs:
     steps:
       - run: echo "API Server version is ${ENTERPRISE_VERSION}"
       - run: echo "PDF server version is ${PDF_VERSION}"
+      - run: echo "S3 bucket key is ${S3_KEY}"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
       - checkout
       - attach_workspace:
