@@ -29,10 +29,12 @@ class Package {
             pdfVersion: 'latest',
             submissionServer: 'formio/submission-server',
             subVersion: 'latest',
+            uswdsVersion: 'latest',
             dbSecret: 'CHANGEME',
             jwtSecret: 'CHANGEME',
             adminEmail: 'admin@example.com',
             adminPass: 'CHANGEME',
+            port: '80',
             default: true
         };
     }
@@ -77,6 +79,7 @@ class Package {
      * @param options.version - The Form.io Enterprise Server version.
      * @param options.pdfVersion - The Form.io PDF Server version.
      * @param options.subVersion - The Form.io Submission Server version.
+     * @param options.uswdsVersion - The USWDS Viewer version.
      * @param options.dbSecret - The Database Secret
      * @param options.jwtSecret - The JWT Secret
      * @param options.adminEmail - The Admin email address
@@ -126,10 +129,14 @@ class Package {
         }
         if (!this.package.hasOwnProperty('server')) {
             this.package.server = this.options.server;
+        }
+        if (this.package.server && (this.package.version || this.options.version)) {
             this.package.server += `:${this.package.version || this.options.version}`;
         }
         if (!this.package.hasOwnProperty('pdf')) {
             this.package.pdf = this.options.pdf;
+        }
+        if (this.package.pdf && (this.package.pdfVersion || this.options.pdfVersion)) {
             this.package.pdf += `:${this.package.pdfVersion || this.options.pdfVersion}`;
         }
         if (!this.package.hasOwnProperty('portal')) {
@@ -175,7 +182,7 @@ class Package {
     }
 
     async addNGINX() {
-        if (!this.package.local) {
+        if (!this.package.local || this.package.nginx) {
             console.log('Adding NGINX configuration.');
             await fs.mkdir(path.join(this.currentDir, 'conf.d'), { recursive: true });
             await fs.writeFile(path.join(this.currentDir, 'conf.d', 'default.conf'), templates.nginx(this.package, this.options));
@@ -198,7 +205,7 @@ class Package {
 
     async createPackage() {
         console.log(`Creating package ${this.outputPath}.`);
-        //await fs.mkdir(path.join('/', ...this.outputPath.split('/').slice(0, -1)));
+        await fs.mkdir(path.join('/', ...this.outputPath.split('/').slice(0, -1)), { recursive: true });
         zipper.sync.zip(path.join(this.currentDir, '/')).compress().save(this.outputPath);
     }
 

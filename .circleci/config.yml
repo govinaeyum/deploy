@@ -39,7 +39,13 @@ aliases:
       EOF
 
 parameters:
+  enterprise_server:
+    type: string
+    default: ""
   enterprise_version:
+    type: string
+    default: ""
+  pdf_server:
     type: string
     default: ""
   pdf_version:
@@ -65,7 +71,9 @@ jobs:
   build-deploy-app:
     executor: app-executor
     environment:
+      ENTERPRISE_SERVER: "<< pipeline.parameters.enterprise_server >>"
       ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
+      PDF_SERVER: "<< pipeline.parameters.pdf_server >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
       S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
       S3_KEY: "<< pipeline.parameters.s3_key >>"
@@ -73,8 +81,10 @@ jobs:
       VERSION_LABEL: "<< pipeline.parameters.version_label >>"
       EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>"
     steps:
-      - run: echo "API Server version is ${ENTERPRISE_VERSION}"
-      - run: echo "PDF server version is ${PDF_VERSION}"
+      - run: echo "API Server Docker Repository ${ENTERPRISE_SERVER} (formio/formio-enterprise)"
+      - run: echo "API Server version is ${ENTERPRISE_VERSION} (formio/pdf-server)"
+      - run: echo "PDF server Docker Repository ${PDF_SERVER} (formio/pdf-server)"
+      - run: echo "PDF server version is ${PDF_VERSION} (pdf-server version)"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
       - run: echo "S3 bucket key is ${S3_KEY}"
       - run: echo "Application version name is ${APP_VERSION_NAME}"
@@ -90,7 +100,7 @@ jobs:
       - *ssh-remote-docker
       - run:
           name: Build deploy package
-          command: node index package compose/aws/${S3_KEY} --license=${MYLICENSE} --version=${ENTERPRISE_VERSION} --pdf-version=${PDF_VERSION}
+          command: node index package compose/${S3_KEY} --license=${MYLICENSE} --server=${ENTERPRISE_SERVER} --version=${ENTERPRISE_VERSION} --pdf-server=${PDF_SERVER} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
           paths:
@@ -118,7 +128,7 @@ jobs:
       - *install-aws-cli
       - run:
           name: Deploy app to s3 bucket
-          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/aws/${S3_KEY} s3://${S3BUCKET_NAME} 
+          command: aws --region ${AWS_REGION} s3 cp ./deployments/compose/${S3_KEY} s3://${S3BUCKET_NAME} 
   deploy-app-version-to-EB:
     executor: app-executor
     environment:
