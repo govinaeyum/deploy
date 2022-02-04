@@ -82,7 +82,7 @@ jobs:
       EBSTALK_ENV_NAME: "<< pipeline.parameters.ebstalk_env_name >>"
     steps:
       - run: echo "API Server Docker Repository ${ENTERPRISE_SERVER} (formio/formio-enterprise)"
-      - run: echo "API Server version is ${ENTERPRISE_VERSION} (formio/pdf-server)"
+      - run: echo "API Server version is ${ENTERPRISE_VERSION} (formio/enterprise-server)"
       - run: echo "PDF server Docker Repository ${PDF_SERVER} (formio/pdf-server)"
       - run: echo "PDF server version is ${PDF_VERSION} (pdf-server version)"
       - run: echo "S3 bucket name is ${S3BUCKET_NAME}"
@@ -100,7 +100,7 @@ jobs:
       - *ssh-remote-docker
       - run:
           name: Build deploy package
-          command: node index package compose/${S3_KEY} --license=${MYLICENSE} --server=${ENTERPRISE_SERVER} --version=${ENTERPRISE_VERSION} --pdf_server=${PDF_SERVER} --pdf-version=${PDF_VERSION}
+          command: node index package compose/${S3_KEY} --license=${MYLICENSE} --server=${ENTERPRISE_SERVER} --version=${ENTERPRISE_VERSION}  --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
           paths:
