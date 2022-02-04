@@ -101,6 +101,7 @@ jobs:
     environment:
       ENTERPRISE_VERSION: "<< pipeline.parameters.enterprise_version >>"
       PDF_VERSION: "<< pipeline.parameters.pdf_version >>"
+      S3_KEY: "<< pipeline.parameters.s3_key >>"
       S3BUCKET_NAME: "<< pipeline.parameters.S3bucket_name >>" 
     steps:
       - run: echo "API Server version is ${ENTERPRISE_VERSION}"
