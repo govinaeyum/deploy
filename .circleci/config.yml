@@ -104,7 +104,7 @@ jobs:
       - persist_to_workspace:
           root: ./
           paths:
-            - ./
+            - deployments
 
   deploy-to-s3-bucket:
     executor: app-executor
