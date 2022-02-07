@@ -149,7 +149,7 @@ jobs:
       - *install-aws-cli
       - run:
           name: Upload application version to elastic beanstalk
-          command: aws --region ${AWS_REGION} elasticbeanstalk create-application-version --application-name ${APP_VERSION_NAME} --version-label ${VERSION_LABEL} --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
+          command: aws --region ${AWS_REGION} elasticbeanstalk create-application-version --application-name "${APP_VERSION_NAME}" --version-label "${VERSION_LABEL}" --source-bundle S3Bucket="${S3BUCKET_NAME}",S3Key="${S3_KEY}"
   deploy-app-version-to-EB Environment:
     executor: app-executor
     environment:
