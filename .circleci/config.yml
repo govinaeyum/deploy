@@ -102,7 +102,7 @@ jobs:
       - run:
           name: Build deploy package
           command: |
-            npm install -g @formio/deploy
+            sudo npm install -g @formio/deploy
             node index package compose/${S3_KEY} --license=${MYLICENSE} --server=${ENTERPRISE_SERVER} --version=${ENTERPRISE_VERSION}  --pdf=${PDF_SERVER} --pdf-version=${PDF_VERSION}
       - persist_to_workspace:
           root: ./
