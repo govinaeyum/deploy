@@ -98,6 +98,7 @@ jobs:
       - *install-aws-cli
       - *setup-remote-docker
       - *ssh-remote-docker
+      - run: docker login -u "${DOCKERHUB_USER}" -p "${DOCKERHUB_PASSWORD}"
       - run:
           name: Build deploy package
           command: |
